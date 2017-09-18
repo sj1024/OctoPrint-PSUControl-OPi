@@ -451,7 +451,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                     pin_output=GPIO.LOW
                 else:
                     pin_output=GPIO.HIGH
-                
+
                 try:
                     GPIO.output(self._gpio_get_pin(self.onoffGPIOPin), pin_output)
                 except (RuntimeError, ValueError) as e:
