@@ -12,7 +12,12 @@ import time
 import subprocess
 import threading
 import os
+import sys
 from flask import make_response, jsonify
+try:
+    import RPi.GPIO as GPIO
+except (ImportError, RuntimeError):
+    pass
 
 class PSUControl(octoprint.plugin.StartupPlugin,
                    octoprint.plugin.TemplatePlugin,
@@ -20,12 +25,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                    octoprint.plugin.SettingsPlugin,
                    octoprint.plugin.SimpleApiPlugin):
 
-    def __init__(self):
-        try:
-            import RPi.GPIO as GPIO
-        except (ImportError, RuntimeError):
-            pass
-        
+    def __init__(self):        
         self._pin_to_gpio_rev1 = [-1, -1, -1, 0, -1, 1, -1, 4, 14, -1, 15, 17, 18, 21, -1, 22, 23, -1, 24, 10, -1, 9, 25, 11, 8, -1, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 ]
         self._pin_to_gpio_rev2 = [-1, -1, -1, 2, -1, 3, -1, 4, 14, -1, 15, 17, 18, 27, -1, 22, 23, -1, 24, 10, -1, 9, 25, 11, 8, -1, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 ]
         self._pin_to_gpio_rev3 = [-1, -1, -1, 2, -1, 3, -1, 4, 14, -1, 15, 17, 18, 27, -1, 22, 23, -1, 24, 10, -1, 9, 25, 11, 8, -1, 7, -1, -1, 5, -1, 6, 12, 13, -1, 19, 16, 26, 20, -1, 21 ]
@@ -64,6 +64,11 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self._waitForHeaters = False
         self._skipIdleTimer = False
         self._configuredGPIOPins = []
+
+        if 'RPi.GPIO' in sys.modules:
+            self._hasGPIO = True
+        else:
+            self._hasGPIO = False
 
     def on_settings_initialized(self):
         self.GPIOMode = self._settings.get(["GPIOMode"])
@@ -194,7 +199,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             return 0
 
     def _configure_gpio(self):
-        if GPIO is None:
+        if not self._hasGPIO:
             self._logger.error("RPi.GPIO is required.")
             return
         
@@ -254,6 +259,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         old_isPSUOn = self.isPSUOn
 
         if self.sensingMethod == 'GPIO':
+            if not self._hasGPIO:
+                return
+
             self._logger.debug("Polling PSU state...")
 
             r = 0
@@ -404,6 +412,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 r = os.system(self.onSysCommand)
                 self._logger.debug("System command returned: %s" % r)
             elif self.switchingMethod == 'GPIO':
+                if not self._hasGPIO:
+                    return
+
                 self._logger.debug("Switching PSU On Using GPIO: %s" % self.onoffGPIOPin)
                 if not self.invertonoffGPIOPin:
                     pin_output=GPIO.HIGH
@@ -428,16 +439,19 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 self._logger.debug("Switching PSU Off Using GCODE: %s" % self.offGCodeCommand)
                 self._printer.commands(self.offGCodeCommand)
             elif self.switchingMethod == 'SYSTEM':
-                self._logger.debug("Switching PSU Off Using SYSTEM: %s" % self.offSysCommand)
+                self    ._logger.debug("Switching PSU Off Using SYSTEM: %s" % self.offSysCommand)
                 r = os.system(self.offSysCommand)
                 self._logger.debug("System command returned: %s" % r)
             elif self.switchingMethod == 'GPIO':
+                if not self._hasGPIO:
+                    return
+
                 self._logger.debug("Switching PSU Off Using GPIO: %s" % self.onoffGPIOPin)
                 if not self.invertonoffGPIOPin:
                     pin_output=GPIO.LOW
                 else:
                     pin_output=GPIO.HIGH
-		
+                
                 try:
                     GPIO.output(self._gpio_get_pin(self.onoffGPIOPin), pin_output)
                 except (RuntimeError, ValueError) as e:
