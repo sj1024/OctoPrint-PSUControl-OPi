@@ -439,7 +439,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 self._logger.debug("Switching PSU Off Using GCODE: %s" % self.offGCodeCommand)
                 self._printer.commands(self.offGCodeCommand)
             elif self.switchingMethod == 'SYSTEM':
-                self    ._logger.debug("Switching PSU Off Using SYSTEM: %s" % self.offSysCommand)
+                self._logger.debug("Switching PSU Off Using SYSTEM: %s" % self.offSysCommand)
                 r = os.system(self.offSysCommand)
                 self._logger.debug("System command returned: %s" % r)
             elif self.switchingMethod == 'GPIO':
