@@ -5,7 +5,11 @@ Power supply can be automatically switched on when user specified commands are s
 
 Supports Commands (G-Code or System) or GPIO to switch power supply on/off.
 
-**Requires a Raspberry Pi**
+This fork has been created for being able to run OctoPrint PSU Control on a Orange Pi Zero (or simliar) board.
+
+The library used for controlling the GPIO pins is [orangepi_PC_gpio_pyH3](https://github.com/duxingkei33/orangepi_PC_gpio_pyH3)
+
+**Requires a Orange Pi board**
 
 ![PSUControl](psucontrol_navbar_settings.png?raw=true)
  
@@ -13,7 +17,6 @@ Supports Commands (G-Code or System) or GPIO to switch power supply on/off.
 ## Setup
 
 Install the plugin using Plugin Manager from Settings
- 
  
 ## Settings
 See the [Wiki](https://github.com/kantlivelong/OctoPrint-PSUControl/wiki/Settings)
